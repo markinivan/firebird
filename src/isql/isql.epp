@@ -70,6 +70,7 @@
 #include "../common/StatusHolder.h"
 #include "../common/Tokens.h"
 #include "../common/TimeZoneUtil.h"
+#include "../common/Token.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -140,6 +141,15 @@ using MsgFormat::SafeArg;
 
 #include "../intl/charsets.h"
 #include <unicode/utf8.h>
+
+#define PARSER_TOKEN(ident, str, nonReserved) \
+  {MAX_USHORT, str, nonReserved},
+
+static const Token tokens[] =
+{
+#include "../common/ParserTokens.h"
+	{0, NULL, false}
+};
 
 
 //DATABASE DB = COMPILETIME "yachts.lnk";
@@ -995,21 +1005,16 @@ void ISQL_prompt(const TEXT* string)
 	//#endif
 }
 
-//char* rl_readline_name;
-//CPPFunction* rl_attempted_completion_function;
-
-char* commands[] = {strdup("SELECT"), strdup("INSERT"), strdup("UPDATE"), strdup("DELETE"), NULL};
-
 char *
 command_generator(const char *text, int state) {
   static int list_index, len;
-  char *name;
+  const char *name;
   if (!state)
     {
 		list_index = 0;
     	len = strlen(text);
     }
-  while ((name = commands[list_index]) != NULL)
+  while ((name = tokens[list_index].tok_string) != NULL)
     {
       list_index++;
       if (strncmp (name, text, len) == 0)
