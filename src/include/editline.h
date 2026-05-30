@@ -32,9 +32,17 @@
 extern "C" {
 #endif
 
+typedef char *(*CPFunction) (const char *, int);
+typedef char **(*CPPFunction) (const char *, int, int);
+
+extern char* rl_readline_name;
+extern CPPFunction* rl_attempted_completion_function;
+extern CPFunction* rl_completion_entry_function;
+
 extern char *readline(const char*);
 extern void add_history(char*);
-
+extern void add_history(char*);
+extern char ** completion_matches (char *text, CPFunction *entry_func);
 
 #ifdef __cplusplus
 } /* extern "C" */

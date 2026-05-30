@@ -29,7 +29,7 @@
   2001/05/20  Neil McCalden  add planonly option
   2001.09.09  Claudio Valderrama: put double quotes around identifiers
 	in dialect 3 only when needed. Solve mischievous declaration/invocation
-	of IUTILS_copy_SQL_id that made no sense and caused pointer problems.
+	of  that made no sense and caused pointer problems.
   2001/10/03  Neil McCalden  pick up Firebird version from database server
 	and display it with client version when -z used.
   2001.10.09 Claudio Valderrama: try to disconnect gracefully in batch mode.
@@ -993,7 +993,42 @@ void ISQL_prompt(const TEXT* string)
 	//	fprintf(stdout, userPrompt.c_str());
 	//	fflush(stdout);
 	//#endif
+}
 
+//char* rl_readline_name;
+//CPPFunction* rl_attempted_completion_function;
+
+char* commands[] = {strdup("SELECT"), strdup("INSERT"), strdup("UPDATE"), strdup("DELETE"), NULL};
+
+char *
+command_generator(const char *text, int state) {
+  static int list_index, len;
+  char *name;
+  if (!state)
+    {
+		list_index = 0;
+    	len = strlen(text);
+    }
+  while ((name = commands[list_index]) != NULL)
+    {
+      list_index++;
+      if (strncmp (name, text, len) == 0)
+		return strdup(name);
+    }
+  return ((char *)NULL);
+}
+
+char **
+com_completion(char *text, int start, int end) {
+	char **matches = completion_matches(text, (CPFunction*)&command_generator);
+	return (matches);
+}
+
+void initialize_readline()
+{
+	rl_readline_name = strdup("ISQL");
+	rl_completion_entry_function = (CPFunction*)command_generator;
+	rl_attempted_completion_function = NULL;
 }
 
 static void readNextInputLine(const char* prompt)
@@ -1027,6 +1062,10 @@ static void readNextInputLine(const char* prompt)
 		// CVC: On 2005-04-02, use an empty prompt when not working in
 		// interactive mode to behave like @@@ below at request by Pavel.
 		const char* new_prompt = Interactive ? prompt : "";
+
+		// Bind completer.
+		initialize_readline();
+
 		for(;;)
 		{
 			lastInputLine = readline(new_prompt);
