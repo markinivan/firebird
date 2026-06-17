@@ -38,6 +38,8 @@ typedef char **(*CPPFunction) (const char *, int, int);
 extern char* rl_readline_name;
 extern CPPFunction* rl_attempted_completion_function;
 extern CPFunction* rl_completion_entry_function;
+extern int (*rl_pre_input_hook)(void);
+extern char* rl_line_buffer;
 
 extern char *readline(const char*);
 extern void add_history(char*);

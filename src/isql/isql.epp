@@ -1074,8 +1074,6 @@ static const char* const userPrompt = userPrompt2;
 static char* lastInputLine = NULL;
 static int getColumn = -1;
 
-
-
 void ISQL_prompt(const TEXT* string)
 {
 /**************************************
@@ -1097,6 +1095,14 @@ void ISQL_prompt(const TEXT* string)
 	//#endif
 }
 
+enum AutocompContext {
+  table_names,
+  no_context
+};
+
+char** completion_table_names = NULL;
+char* current_rl_line = NULL;
+
 const char* low_reg(const char* str) {
   char* tmp = strdup(str);
       for (char* p = tmp; *p; ++p)
@@ -1104,6 +1110,92 @@ const char* low_reg(const char* str) {
 	    *p = std::tolower(static_cast<unsigned char>(*p));
       }
   return tmp;
+}
+
+void generate_all_tables(LegacyTables flag)
+{
+	int index_counter = 0;
+	EXEC SQL SET TRANSACTION READ ONLY;
+	FOR REL IN RDB$RELATIONS
+		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+			 REL.RDB$VIEW_BLR MISSING
+		SORTED BY REL.RDB$SCHEMA_NAME, REL.RDB$RELATION_NAME
+	{
+		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && 
+		    (flag != ALL_objects))
+			continue;
+
+		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME, 
+		                                       REL.RDB$SCHEMA_NAME);
+
+		if (flag || !strncmp(REL.RDB$SECURITY_CLASS, "SQL$", 4))
+		{
+			Firebird::string name = IUTILS_name_to_string(relationName);
+			const char* table_name = name.c_str();
+			const char* dot = strchr(table_name, '.');
+            if (dot)
+                table_name = dot + 1;
+			completion_table_names = (char**)realloc(completion_table_names, (index_counter+2)* sizeof(char*));
+			completion_table_names[index_counter] = strdup(table_name);
+			index_counter++;
+		}
+	}
+	completion_table_names[index_counter] = NULL;
+	END_FOR
+	ON_ERROR
+	{
+		ISQL_errmsg(fbStatus);
+		ROLLBACK;
+		return;
+	}
+	END_ERROR;
+	EXEC SQL COMMIT;
+}
+
+static int save_line_hook(void)
+{
+    if (current_rl_line)
+        free(current_rl_line);
+    
+    if (rl_line_buffer && *rl_line_buffer)
+        current_rl_line = strdup(rl_line_buffer);
+    else
+        current_rl_line = NULL;
+    
+    return 0;
+}
+
+AutocompContext get_aotocomp_context(char *text, int start, int end){
+  // only for tests
+   return table_names;
+   if (current_rl_line)
+    {
+        printf("Full line: [%s]\n", current_rl_line);
+        printf("Word to complete: [%s] (positions %d-%d)\n", text, start, end);
+        char* before = (char*)malloc(start + 1);
+        strncpy(before, current_rl_line, start);
+        before[start] = '\0';
+        printf("Before cursor: [%s]\n", before);
+        free(before);
+    }
+
+  char* token1 = strtok(current_rl_line, " ");
+  printf("\nTEXT:%s\n", current_rl_line);
+  char* token2 = NULL;
+  if (token1 != NULL) 
+    {
+    token2 = strtok(NULL, " ");
+	}
+  while (token2 != NULL)
+    {
+	token1 = token2;
+    token2 = strtok(NULL, " ");
+    }
+  if (((token1 != NULL) && strncmp(low_reg(token1), "from", 4) == 0) || ((token2 != NULL) && strncmp(low_reg(token2), "from", 4) == 0))
+    {
+    return table_names;	
+    }
+  return no_context;
 }
 
 char *
@@ -1130,17 +1222,63 @@ command_generator(const char *text, int state) {
   return ((char *)NULL);
 }
 
+char *
+tables_generator(const char *text, int state) {
+  static int list_index, len;
+  const char *name;
+  if (!state) 
+  {
+    list_index = 0;
+    len = strlen(text);
+  }
+  while ((name = completion_table_names[list_index]) != NULL)
+  {
+    list_index++;
+    if (strncmp (name, text, len) == 0)
+    {
+      return strdup(name);
+    }
+    else if(strncmp (low_reg(name), text, len) == 0)
+    {
+      return strdup(low_reg(name));
+    }
+  }
+  return ((char *)NULL);
+}
+
 char **
 com_completion(char *text, int start, int end) {
-	char **matches = completion_matches(text, (CPFunction*)&command_generator);
-	return (matches);
+  AutocompContext context = get_aotocomp_context(text, start, end);
+  char **matches;
+  switch(context) {
+    case table_names: 
+	  {
+	  generate_all_tables(SQL_objects);
+	  matches = completion_matches(text, (CPFunction*)&tables_generator);
+	  int index = 0;
+	  while(completion_table_names[index] != NULL) {
+	    free(completion_table_names[index++]);	
+	  }
+	  free(completion_table_names);
+	  completion_table_names = NULL;
+	  break;
+	  }
+    default:
+	  {
+	  matches = completion_matches(text, (CPFunction*)&command_generator);
+      break;
+	  }
+  }
+  return (matches);
 }
 
 void initialize_readline()
 {
+    rl_pre_input_hook = save_line_hook;
+
 	rl_readline_name = strdup("ISQL");
 	rl_completion_entry_function = (CPFunction*)command_generator;
-	rl_attempted_completion_function = NULL;
+	rl_attempted_completion_function = (CPPFunction*)com_completion;
 }
 
 static void readNextInputLine(const char* prompt)
