@@ -1121,11 +1121,11 @@ void generate_all_tables(LegacyTables flag)
 			 REL.RDB$VIEW_BLR MISSING
 		SORTED BY REL.RDB$SCHEMA_NAME, REL.RDB$RELATION_NAME
 	{
-		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && 
+		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) &&
 		    (flag != ALL_objects))
 			continue;
 
-		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME, 
+		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME,
 		                                       REL.RDB$SCHEMA_NAME);
 
 		if (flag || !strncmp(REL.RDB$SECURITY_CLASS, "SQL$", 4))
@@ -1156,12 +1156,12 @@ static int save_line_hook(void)
 {
     if (current_rl_line)
         free(current_rl_line);
-    
+
     if (rl_line_buffer && *rl_line_buffer)
         current_rl_line = strdup(rl_line_buffer);
     else
         current_rl_line = NULL;
-    
+
     return 0;
 }
 
@@ -1182,7 +1182,7 @@ AutocompContext get_aotocomp_context(char *text, int start, int end){
   char* token1 = strtok(current_rl_line, " ");
   printf("\nTEXT:%s\n", current_rl_line);
   char* token2 = NULL;
-  if (token1 != NULL) 
+  if (token1 != NULL)
     {
     token2 = strtok(NULL, " ");
 	}
@@ -1193,7 +1193,7 @@ AutocompContext get_aotocomp_context(char *text, int start, int end){
     }
   if (((token1 != NULL) && strncmp(low_reg(token1), "from", 4) == 0) || ((token2 != NULL) && strncmp(low_reg(token2), "from", 4) == 0))
     {
-    return table_names;	
+    return table_names;
     }
   return no_context;
 }
@@ -1202,7 +1202,7 @@ char *
 command_generator(const char *text, int state) {
   static int list_index, len;
   const char *name;
-  if (!state) 
+  if (!state)
   {
     list_index = 0;
     len = strlen(text);
@@ -1226,7 +1226,7 @@ char *
 tables_generator(const char *text, int state) {
   static int list_index, len;
   const char *name;
-  if (!state) 
+  if (!state)
   {
     list_index = 0;
     len = strlen(text);
@@ -1246,18 +1246,35 @@ tables_generator(const char *text, int state) {
   return ((char *)NULL);
 }
 
+static Firebird::string getLastCompleteToken(int start)
+{
+	const char* line = rl_line_buffer ? rl_line_buffer : "";
+
+	Firebird::Tokens toks;
+	toks.parse(start, line);
+
+	if (!toks.getCount())
+		return "";
+
+	const auto& tok = toks[toks.getCount() - 1];
+	return Firebird::string(tok.text, tok.length);
+}
+
 char **
 com_completion(char *text, int start, int end) {
   AutocompContext context = get_aotocomp_context(text, start, end);
+
+	const auto prevToken = getLastCompleteToken(start);
+
   char **matches;
   switch(context) {
-    case table_names: 
+    case table_names:
 	  {
 	  generate_all_tables(SQL_objects);
 	  matches = completion_matches(text, (CPFunction*)&tables_generator);
 	  int index = 0;
 	  while(completion_table_names[index] != NULL) {
-	    free(completion_table_names[index++]);	
+	    free(completion_table_names[index++]);
 	  }
 	  free(completion_table_names);
 	  completion_table_names = NULL;
