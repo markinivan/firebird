@@ -1,7 +1,7 @@
-/*	$NetBSD: fgetln.c,v 1.9 2008/04/29 06:53:03 martin Exp $	*/
+/*	$NetBSD: rl1.c,v 1.2 2016/02/29 00:54:19 christos Exp $	*/
 
 /*-
- * Copyright (c) 1998 The NetBSD Foundation, Inc.
+ * Copyright (c) 2010 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -29,79 +29,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_NBTOOL_CONFIG_H
-#include "nbtool_config.h"
-#endif
+#include <sys/cdefs.h>
+#if !defined(lint)
+__RCSID("$NetBSD: rl1.c,v 1.2 2016/02/29 00:54:19 christos Exp $");
+#endif /* not lint  */
 
-#if !HAVE_FGETLN
-#include "config.h"
-#include <stdlib.h>
-#ifndef HAVE_NBTOOL_CONFIG_H
-/* These headers are required, but included from nbtool_config.h */
+/*
+ * test.c: A little test program
+ */
 #include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#endif
+#include <readline/readline.h>
 
-char *
-fgetln(FILE *fp, size_t *len)
-{
-	static char *buf = NULL;
-	static size_t bufsiz = 0;
-	char *ptr;
-
-
-	if (buf == NULL) {
-		bufsiz = BUFSIZ;
-		if ((buf = malloc(bufsiz)) == NULL)
-			return NULL;
-	}
-
-	if (fgets(buf, bufsiz, fp) == NULL)
-		return NULL;
-
-	*len = 0;
-	while ((ptr = strchr(&buf[*len], '\n')) == NULL) {
-		size_t nbufsiz = bufsiz + BUFSIZ;
-		char *nbuf = realloc(buf, nbufsiz);
-
-		if (nbuf == NULL) {
-			int oerrno = errno;
-			free(buf);
-			errno = oerrno;
-			buf = NULL;
-			return NULL;
-		} else
-			buf = nbuf;
-
-		if (fgets(&buf[bufsiz], BUFSIZ, fp) == NULL) {
-			buf[bufsiz] = '\0';
-			*len = strlen(buf);
-			return buf;
-		}
-
-		*len = bufsiz;
-		bufsiz = nbufsiz;
-	}
-
-	*len = (ptr - buf) + 1;
-	return buf;
-}
-
-#endif
-
-#ifdef TEST
 int
 main(int argc, char *argv[])
 {
 	char *p;
-	size_t len;
-
-	while ((p = fgetln(stdin, &len)) != NULL) {
-		(void)printf("%zu %s", len, p);
-		free(p);
+	while ((p = readline("hi$")) != NULL) {
+		add_history(p);
+		printf("%d %s\n", history_length, p);
 	}
 	return 0;
 }
-#endif
