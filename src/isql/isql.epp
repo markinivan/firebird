@@ -508,6 +508,7 @@ static bool Input_file = false;
 
 static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
 static Firebird::GlobalPtr<string> TranParams;
+static void initialize_readline();
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -805,6 +806,7 @@ int ISQL_main(int argc, char* argv[])
  **************************************/
 
 	os_utils::StopHandler stopHandler(&sigTstp);
+	initialize_readline();
 
 #if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
 	setlocale(LC_CTYPE, "");
@@ -1008,6 +1010,16 @@ void ISQL_prompt(const TEXT* string)
 
 const char* low_reg(const char* str)
 {
+/**************************************
+ *
+ *	l o w _ r e g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns a string in low case
+ *
+ **************************************/
 	char* tmp = strdup(str);
     for (char* p = tmp; *p; ++p)
 	{
@@ -1018,6 +1030,16 @@ const char* low_reg(const char* str)
 
 void update_tokens()
 {
+/**************************************
+ *
+ *	u p d a t e _ t o k e n s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update tokens names in tokens array
+ *
+ **************************************/
 	const char *name;
 	int list_index = 0;
 	char sim[10] = "!()<>=,~|";
@@ -1028,6 +1050,7 @@ void update_tokens()
 		int sim_index = 0;
     	while(sim[sim_index] != '\0') 
 		{
+			exit = 0;
 			if (strchr(name, sim[sim_index]) != NULL)
 			{
 				exit = 1;
@@ -1043,6 +1066,8 @@ void update_tokens()
 		tokens[tokens_size] = strdup(name);
 		tokens_size++;
 	}
+	if (tokens_size == 0)
+		tokens = (char**)malloc((tokens_size+2) * sizeof(char*));
 	tokens[tokens_size] = NULL;
 }
 
@@ -1156,7 +1181,7 @@ char** completion_list_generator(char *text, int start, int end)
 	return (matches);
 }
 
-void initialize_readline()
+static void initialize_readline()
 {
  /**************************************
  *
@@ -1207,7 +1232,7 @@ static void readNextInputLine(const char* prompt)
 		const char* new_prompt = Interactive ? prompt : "";
 
 		// Bind completer.
-		initialize_readline();
+		//initialize_readline();
 
 		for(;;)
 		{
