@@ -142,108 +142,6 @@ using MsgFormat::SafeArg;
 #include "../intl/charsets.h"
 #include <unicode/utf8.h>
 
-static const char* tokens[] =
-{
-"ABS", "ABSOLUTE", "ACCENT", "ACCESS", "ACOS", "ACOSH", "ACTION", "ACTIVE", "ADD", "ADMIN",
-"AFTER", "ALGORITHM", "ALL", "ALTER", "ALWAYS", "AND", "ANY", "ANY_VALUE", "APPLICATION",
-"ARRAY", "AS", "ASC", "ASCENDING", "ASCII_CHAR", "ASCII_VAL", "ASIN", "ASINH", "AT",
-"ATAN", "ATAN2", "ATANH", "ATOMIC", "AUTO", "AUTONOMOUS", "AVG", "BACKUP", "BASE",
-"BASE64_DECODE", "BASE64_ENCODE", "BEFORE", "BEGIN", "BETWEEN", "BIGINT", "BIN_AND",
-"BIN_AND_AGG", "BIN_NOT", "BIN_OR", "BIN_OR_AGG", "BIN_SHL", "BIN_SHR", "BIN_XOR",
-"BIN_XOR_AGG", "BINARY", "BIND", "BIT_LENGTH", "BLOB", "BLOB_APPEND", "BLOCK", "BODY",
-"BOOLEAN", "BOTH", "BREAK", "BTRIM", "BY", "CACHE", "CALL", "CALLER", "CASCADE", "CASE",
-"CAST", "CEIL", "CEILING", "CHAR", "CHAR_LENGTH", "CHAR_TO_UUID", "CHARACTER",
-"CHARACTER_LENGTH", "CHECK", "CLASS", "CLEAR", "CLOSE", "COALESCE", "COLLATE",
-"COLLATION", "COLUMN", "COMMENT", "COMMIT", "COMMITTED", "COMMON", "COMPARE_DECFLOAT",
-"COMPUTED", "CONDITIONAL", "CONNECT", "CONNECTION", "CONSISTENCY", "CONSTRAINT",
-"CONTAINING", "CONTINUE", "CORR", "CORRESPONDING", "COS", "COSH", "COT", "COUNT",
-"COUNTER", "COVAR_POP", "COVAR_SAMP", "CREATE", "CROSS", "CRYPT_HASH", "CSTRING",
-"CTR_BIG_ENDIAN", "CTR_LENGTH", "CTR_LITTLE_ENDIAN", "CUME_DIST", "CURRENT",
-"CURRENT_CONNECTION", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
-"CURRENT_TIMESTAMP", "CURRENT_TRANSACTION", "CURRENT_USER", "CURSOR", "CYCLE",
-"DATABASE", "DATA", "DATE", "DATEADD", "DATEDIFF", "DAY", "DDL", "DEBUG", "DEC",
-"DECFLOAT", "DECIMAL", "DECLARE", "DECODE", "DECRYPT", "DEFAULT", "DEFINER", "DELETE",
-"DELETING", "DENSE_RANK", "DEPLOY", "DESC", "DESCENDING", "DESCRIPTOR", "DETERMINISTIC",
-"DETACH", "DIFFERENCE", "DISABLE", "DISCONNECT", "DISTINCT", "DO", "DOMAIN", "DOUBLE",
-"DOWNTO", "DROP", "DUMP", "ECHO", "EDIT", "ELEMENT", "ELSE", "EMPTY", "ENABLE",
-"ENCRYPT", "END", "ENGINE", "ENHANCED", "ENTRY_POINT", "ERROR", "ESCAPE", "EXCEPT",
-"EXCEPTION", "EXCESS", "EXCLUDE", "EXCLUSIVE", "EXECUTE", "EXISTS", "EXIT", "EXP",
-"EXTENDED", "EXTERNAL", "EXTRACT", "FALSE", "FETCH", "FILE", "FILTER", "FINAL", "FIRST",
-"FIRST_DAY", "FIRST_VALUE", "FIRSTNAME", "FIXED", "FLOAT", "FLOOR", "FOLLOWING", "FOR",
-"FORCED", "FOREIGN", "FORMAT", "FOUND", "FREE_IT", "FROM", "FULL", "FUNCTION",
-"GDSCODE", "GENERATE_SERIES", "GENERATED", "GENERATOR", "GENERIC", "GEN_ID", "GEN_UUID",
-"GLOBAL", "GOTO", "GRANT", "GRANTED", "GREATEST", "GROUP", "GUARDED", "HASH", "HAVING",
-"HEX_DECODE", "HEX_ENCODE", "HIDDEN", "HOST", "HOUR", "IDENTITY", "IDLE", "IF",
-"IGNORE", "IIF", "IMMEDIATE", "IMPLICIT", "IMPORT", "IN", "INACTIVE", "INCLUDE",
-"INCREMENT", "INDEX", "INFINITY", "INHERIT", "INIT", "INITIALLY", "INNER", "INPUT",
-"INPUT_TYPE", "INSENSITIVE", "INSERT", "INSERTING", "INSTEAD", "INT", "INT128",
-"INTEGER", "INTERSECT", "INTO", "INVOKER", "INVISIBLE", "IS", "ISOLATION", "IV",
-"JAVA", "JOIN", "JSON", "KEEP", "KEY", "LABEL", "LAG", "LANGUAGE", "LARGE", "LAST",
-"LAST_DAY", "LAST_VALUE", "LASTNAME", "LATERAL", "LEAD", "LEADING", "LEAST", "LEAVE",
-"LEFT", "LEGACY", "LENGTH", "LEVEL", "LEXER", "LIBRARY", "LIFETIME", "LIKE", "LIMBO",
-"LIMIT", "LINGER", "LINK", "LIST", "LISTAGG", "LISTENER", "LN", "LOAD", "LOCAL",
-"LOCALTIME", "LOCALTIMESTAMP", "LOCATION", "LOCK", "LOCKED", "LOG", "LOG10", "LONG",
-"LOOP", "LOWER", "LPAD", "LPARAM", "LTRIM", "MAIL", "MAKE_DBKEY", "MANAGED", "MANUAL",
-"MAPPING", "MARK", "MASTER", "MATCH", "MATCHED", "MATCHING", "MAX", "MAXVALUE",
-"MAX_ROWS", "MEMBER", "MEMORY", "MERGE", "MESSAGE", "MIDDLENAME", "MIGRATE",
-"MILLISECOND", "MIN", "MINUTE", "MINVALUE", "MIN_ROWS", "MIRROR", "MOD", "MODE",
-"MODULE_NAME", "MONITOR", "MONTH", "MOVE", "MULTI", "NAME", "NAMES", "NAMESPACE",
-"NAN", "NATIONAL", "NATIVE", "NATURAL", "NCHAR", "NEVER", "NEW", "NEXT", "NO",
-"NOCACHE", "NOCYCLE", "NOMAXVALUE", "NOMINVALUE", "NOORDER", "NORMAL",
-"NORMALIZE_DECFLOAT", "NOT", "NOW", "NTH_VALUE", "NTILE", "NULLIF", "NULL", "NULLS",
-"NUMBER", "NUMERIC", "OBJECT", "OCCUPANCY", "OCTET_LENGTH", "OF", "OFF", "OFFLINE",
-"OFFSET", "OID", "OLD", "OLDEST", "OMITTING", "ON", "ONCE", "ONLINE", "ONLY", "OPEN",
-"OPERATOR", "OPTIMIZE", "OPTION", "OPTIONS", "OR", "ORDER", "ORGANIZATION", "OS_NAME",
-"OTHERS", "OUT", "OUTER", "OUTPUT", "OUTPUT_TYPE", "OVER", "OVERFLOW", "OVERLAY",
-"OVERRIDING", "OWNER", "PACKAGE", "PAD", "PAGE", "PAGES", "PAGE_SIZE", "PARALLEL",
-"PARAMETER", "PARSER", "PARTITION", "PASSING", "PASSWORD", "PATH", "PERCENT_RANK",
-"PERCENTILE_CONT", "PERCENTILE_DISC", "PERSISTENT", "PI", "PIPE", "PIVOT", "PKCS_1_5",
-"PLACING", "PLAN", "PLUGIN", "POLICY", "POOL", "POPULATE", "PORT", "POSITION",
-"POST_EVENT", "POWER", "PRECEDES", "PRECEDING", "PRECISION", "PREPARE", "PRESERVE",
-"PRIMARY", "PRIOR", "PRIVATE", "PRIVILEGE", "PRIVILEGES", "PROCEDURE", "PROFILE",
-"PROPERTY", "PROTECTED", "PROTECTION", "PUBLICATION", "PUBLIC", "PURGE", "QUALIFY",
-"QUANTIZE", "QUARTER", "QUERY", "QUIT", "RAISE", "RAND", "RANDOM", "RANGE", "RANK",
-"RAW", "RDB$DB_KEY", "RDB$ERROR", "RDB$GET_CONTEXT", "RDB$GET_TRANSACTION_CN",
-"RDB$RECORD_VERSION", "RDB$RESET_CONTEXT", "RDB$ROLE_IN_USE", "RDB$SET_CONTEXT",
-"RDB$SYSTEM_PRIVILEGE", "READ", "READ_ONLY", "REAL", "REBUILD", "RECALCULATE",
-"RECORD_VERSION", "RECOVER", "RECREATE", "RECURSIVE", "REFERENCES", "REFERENCING",
-"REFRESH", "REGISTER", "REGR_AVGX", "REGR_AVGY", "REGR_COUNT", "REGR_INTERCEPT",
-"REGR_R2", "REGR_SLOPE", "REGR_SXX", "REGR_SXY", "REGR_SYY", "REINDEX", "REJECT",
-"RELATIVE", "RELEASE", "RENAME", "REPEATABLE", "REPLACE", "REPLICATION", "REQUESTS",
-"REQUIRED", "RESERV", "RESERVING", "RESET", "RESETTING", "RESOLVING", "RESPECT",
-"RESTART", "RESTORE", "RESTRICT", "RESULT", "RESUMABLE", "RETAIN", "RETURN",
-"RETURNING", "RETURNING_VALUES", "RETURNS", "REVERSE", "REVOKE", "RIGHT", "ROLE",
-"ROLLBACK", "ROUND", "ROUTINE", "ROW", "ROW_COUNT", "ROW_NUMBER", "ROWS", "RPAD",
-"RSA_DECRYPT", "RSA_ENCRYPT", "RSA_PRIVATE", "RSA_PUBLIC", "RSA_SIGN_HASH",
-"RSA_VERIFY_HASH", "RTRIM", "RULE", "SAFE", "SALT", "SALT_LENGTH", "SAMPLE", "SAVE",
-"SAVEPOINT", "SCALAR", "SCALAR_ARRAY", "SCHEDULE", "SCHEMA", "SCOPE", "SCROLL",
-"SEARCH", "SEARCH_PATH", "SECOND", "SECRET", "SECTION", "SECURITY", "SEGMENT",
-"SELECT", "SELF", "SENSITIVE", "SEPARATE", "SEQUENCE", "SERIAL", "SERIALIZABLE",
-"SERVER", "SERVERWIDE", "SESSION", "SET", "SETS", "SHADOW", "SHARED", "SHELL", "SHOW",
-"SHUTDOWN", "SIGN", "SIGNATURE", "SIMILAR", "SIMPLE", "SIN", "SINGULAR", "SINH",
-"SIZE", "SKIP", "SLOT", "SMALLINT", "SNAPSHOT", "SOME", "SORT", "SOURCE", "SPACE",
-"SPECIFIC", "SQL", "SQLCODE", "SQLSTATE", "SQRT", "STABILITY", "STACK", "STANDARD",
-"START", "STARTING", "STARTS", "STATEMENT", "STATIC", "STATISTICS", "STDDEV_POP",
-"STDDEV_SAMP", "STDIN", "STDOUT", "STORAGE", "STORE", "STREAM", "STRICT", "STRING",
-"STRIP", "STRUCTURE", "STYLE", "SUBP_TYPE", "SUBSTRING", "SUCCESSFUL", "SUMMARY",
-"SUM", "SUSPEND", "SWITCH", "SYNONYM", "SYSTEM", "TABLE", "TABLESPACE", "TAG", "TAGS",
-"TAN", "TANH", "TARGET", "TEMP", "TEMPLATE", "TEMPORARY", "TERMINATOR", "TEST", "TEXT",
-"THEN", "THREAD", "TIES", "TIME", "TIMEOUT", "TIMER", "TIMES", "TIMESTAMP",
-"TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TIMEZONE_NAME", "TO", "TOKEN", "TOTAL",
-"TOTALORDER", "TRACE", "TRACKING", "TRAILING", "TRAN", "TRANSACTION", "TRANSFORM",
-"TRANSLATE", "TRANSLATION", "TRAPS", "TREAT", "TRIGGER", "TRIM", "TRUE", "TRUNC",
-"TRUNCATE", "TRUSTED", "TUMBLE", "TWO_PHASE", "TYPE", "UNBOUNDED", "UNCOMMITTED",
-"UNDER", "UNDO", "UNICODE_CHAR", "UNICODE_VAL", "UNION", "UNIQUE", "UNKNOWN",
-"UNLIMITED", "UNLIST", "UNPIVOT", "UNSAFE", "UPDATE", "UPDATABLE", "UPDATING",
-"UPGRADE", "UPPER", "USAGE", "USE", "USER", "USING", "UUID", "UUID_TO_CHAR", "VACUUM",
-"VALID", "VALUE", "VALUES", "VAR_POP", "VAR_SAMP", "VARBINARY", "VARCHAR", "VARIABLE",
-"VARIANT", "VARYING", "VERBOSE", "VERSION", "VIEW", "VIRTUAL", "VISIBLE", "WAIT",
-"WARNING", "WEEK", "WEEKDAY", "WHEN", "WHENEVER", "WHERE", "WHILE", "WINDOW", "WITH",
-"WITHIN", "WITHOUT", "WORK", "WRAP", "WRAPPER", "WRITE", "XML", "YEAR", "YEARDAY",
-"ZONE", "ZONE_HOUR", "ZONE_MINUTE", "ZONE_NAME", NULL
-};
-
-
 //DATABASE DB = COMPILETIME "yachts.lnk";
 DATABASE DB = COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
@@ -272,6 +170,19 @@ constexpr const char* ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, U
 constexpr int ISQL_COUNTERS = 8;
 
 constexpr const char* UNKNOWN = "*unknown*";
+
+#define PARSER_TOKEN(ident, str, nonReserved) \
+  {MAX_USHORT, str, nonReserved},
+
+static const Token parser_tokens[] =
+{
+#include "../common/ParserTokens.h"
+	{0, NULL, false}
+};
+
+char** tokens = NULL;
+int tokens_size = 0;
+int tables_actuality = 0;
 
 namespace IcuUtil
 {
@@ -1095,37 +1006,73 @@ void ISQL_prompt(const TEXT* string)
 	//#endif
 }
 
-enum AutocompContext {
-  table_names,
-  no_context
-};
-
-char** completion_table_names = NULL;
-char* current_rl_line = NULL;
-
-const char* low_reg(const char* str) {
-  char* tmp = strdup(str);
-      for (char* p = tmp; *p; ++p)
-	  {
-	    *p = std::tolower(static_cast<unsigned char>(*p));
-      }
-  return tmp;
+const char* low_reg(const char* str)
+{
+	char* tmp = strdup(str);
+    for (char* p = tmp; *p; ++p)
+	{
+		*p = std::tolower(static_cast<unsigned char>(*p));
+    }
+	return tmp;
 }
 
-void generate_all_tables(LegacyTables flag)
+void update_tokens()
 {
-	int index_counter = 0;
+	const char *name;
+	int list_index = 0;
+	char sim[10] = "!()<>=,~|";
+	int exit = 0;
+	while ((name = parser_tokens[list_index].tok_string) != NULL)
+	{
+    	list_index++;
+		int sim_index = 0;
+    	while(sim[sim_index] != '\0') 
+		{
+			if (strchr(name, sim[sim_index]) != NULL)
+			{
+				exit = 1;
+				break;
+			}
+			sim_index++;
+		}
+		if (exit)
+		{
+			continue;
+		}
+    	tokens = (char**)realloc(tokens, (tokens_size+2) * sizeof(char*));
+		tokens[tokens_size] = strdup(name);
+		tokens_size++;
+	}
+	tokens[tokens_size] = NULL;
+}
+
+void update_tables(LegacyTables flag)
+{
+/**************************************
+ *
+ *	u p d a t e _ t a b l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update tables names in tokens array
+ *
+ *	Parameters:  flag -- type of tables
+ *
+ **************************************/
+	int tables_count = tokens_size;
+	int id = 0;
 	EXEC SQL SET TRANSACTION READ ONLY;
 	FOR REL IN RDB$RELATIONS
 		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
-			 REL.RDB$VIEW_BLR MISSING
+			REL.RDB$VIEW_BLR MISSING
 		SORTED BY REL.RDB$SCHEMA_NAME, REL.RDB$RELATION_NAME
 	{
-		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && 
+		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) &&
 		    (flag != ALL_objects))
 			continue;
 
-		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME, 
+		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME,
 		                                       REL.RDB$SCHEMA_NAME);
 
 		if (flag || !strncmp(REL.RDB$SECURITY_CLASS, "SQL$", 4))
@@ -1135,12 +1082,12 @@ void generate_all_tables(LegacyTables flag)
 			const char* dot = strchr(table_name, '.');
             if (dot)
                 table_name = dot + 1;
-			completion_table_names = (char**)realloc(completion_table_names, (index_counter+2)* sizeof(char*));
-			completion_table_names[index_counter] = strdup(table_name);
-			index_counter++;
+			tokens = (char**)realloc(tokens, (tables_count+2)* sizeof(char*));
+			tokens[tables_count] = strdup(table_name);
+			tables_count++;
 		}
 	}
-	completion_table_names[index_counter] = NULL;
+	tokens[tables_count] = NULL;
 	END_FOR
 	ON_ERROR
 	{
@@ -1152,133 +1099,79 @@ void generate_all_tables(LegacyTables flag)
 	EXEC SQL COMMIT;
 }
 
-static int save_line_hook(void)
+char* token_list_generator(const char *text, int state)
 {
-    if (current_rl_line)
-        free(current_rl_line);
-    
-    if (rl_line_buffer && *rl_line_buffer)
-        current_rl_line = strdup(rl_line_buffer);
-    else
-        current_rl_line = NULL;
-    
-    return 0;
-}
-
-AutocompContext get_aotocomp_context(char *text, int start, int end){
-  // only for tests
-   return table_names;
-   if (current_rl_line)
-    {
-        printf("Full line: [%s]\n", current_rl_line);
-        printf("Word to complete: [%s] (positions %d-%d)\n", text, start, end);
-        char* before = (char*)malloc(start + 1);
-        strncpy(before, current_rl_line, start);
-        before[start] = '\0';
-        printf("Before cursor: [%s]\n", before);
-        free(before);
-    }
-
-  char* token1 = strtok(current_rl_line, " ");
-  printf("\nTEXT:%s\n", current_rl_line);
-  char* token2 = NULL;
-  if (token1 != NULL) 
-    {
-    token2 = strtok(NULL, " ");
+ /**************************************
+ *
+ *	t o k e n _ l i s t _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Generate autocomplete variants
+ *
+ *	Parameters:  text -- 0, fragment of compliteable word
+ *
+ **************************************/
+	static int list_index, len;
+	const char *name;
+	if (!state)
+	{
+    	list_index = 0;
+    	len = strlen(text);
 	}
-  while (token2 != NULL)
-    {
-	token1 = token2;
-    token2 = strtok(NULL, " ");
-    }
-  if (((token1 != NULL) && strncmp(low_reg(token1), "from", 4) == 0) || ((token2 != NULL) && strncmp(low_reg(token2), "from", 4) == 0))
-    {
-    return table_names;	
-    }
-  return no_context;
+	while ((name = tokens[list_index]) != NULL)
+	{
+    	list_index++;
+    	if (strncmp (name, text, len) == 0)
+    	{
+      		return strdup(name);
+    	}
+    	else if(strncmp (low_reg(name), text, len) == 0)
+    	{
+      		return strdup(low_reg(name));
+    	}
+  	}
+	return ((char *)NULL);
 }
 
-char *
-command_generator(const char *text, int state) {
-  static int list_index, len;
-  const char *name;
-  if (!state) 
-  {
-    list_index = 0;
-    len = strlen(text);
-  }
-  while ((name = tokens[list_index]) != NULL)
-  {
-    list_index++;
-    if (strncmp (name, text, len) == 0)
-    {
-      return strdup(name);
-    }
-    else if(strncmp (low_reg(name), text, len) == 0)
-    {
-      return strdup(low_reg(name));
-    }
-  }
-  return ((char *)NULL);
-}
-
-char *
-tables_generator(const char *text, int state) {
-  static int list_index, len;
-  const char *name;
-  if (!state) 
-  {
-    list_index = 0;
-    len = strlen(text);
-  }
-  while ((name = completion_table_names[list_index]) != NULL)
-  {
-    list_index++;
-    if (strncmp (name, text, len) == 0)
-    {
-      return strdup(name);
-    }
-    else if(strncmp (low_reg(name), text, len) == 0)
-    {
-      return strdup(low_reg(name));
-    }
-  }
-  return ((char *)NULL);
-}
-
-char **
-com_completion(char *text, int start, int end) {
-  AutocompContext context = get_aotocomp_context(text, start, end);
-  char **matches;
-  switch(context) {
-    case table_names: 
-	  {
-	  generate_all_tables(SQL_objects);
-	  matches = completion_matches(text, (CPFunction*)&tables_generator);
-	  int index = 0;
-	  while(completion_table_names[index] != NULL) {
-	    free(completion_table_names[index++]);	
-	  }
-	  free(completion_table_names);
-	  completion_table_names = NULL;
-	  break;
-	  }
-    default:
-	  {
-	  matches = completion_matches(text, (CPFunction*)&command_generator);
-      break;
-	  }
-  }
-  return (matches);
+char** completion_list_generator(char *text, int start, int end)
+{
+ /**************************************
+ *
+ *	c o m p l e t i o n _ l i s t _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compiles a list of complitions options
+ *
+ **************************************/
+	if (tables_actuality == 0)
+	{
+		update_tables(SQL_objects);
+		tables_actuality = 1;
+	}
+	char** matches = completion_matches(text, (CPFunction*)&token_list_generator);
+	return (matches);
 }
 
 void initialize_readline()
 {
-    rl_pre_input_hook = save_line_hook;
-
+ /**************************************
+ *
+ *	i n i t i a l i z e _ r e a d l i n e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize autocomplition parameters
+ *
+ **************************************/
 	rl_readline_name = strdup("ISQL");
-	rl_completion_entry_function = (CPFunction*)command_generator;
-	rl_attempted_completion_function = (CPPFunction*)com_completion;
+	rl_completion_entry_function = (CPFunction*)token_list_generator;
+	rl_attempted_completion_function = (CPPFunction*)completion_list_generator;
+	update_tokens();
 }
 
 static void readNextInputLine(const char* prompt)
@@ -8872,7 +8765,13 @@ static processing_state process_statement(const std::string& str)
 			// only at commit time, so we need to check here.
 			// AP: fbStatus will be cleaned in commit_trans()
 			if (!commit_trans(&D__trans))
+			{
 				ret = ps_ERR;
+			}
+			else
+			{
+				tables_actuality = 0;
+			}
 
 			// check for warnings from COMMIT
 			ISQL_warning(fbStatus);
@@ -8920,6 +8819,14 @@ static processing_state process_statement(const std::string& str)
 			// CVC: Make this conditional if it causes problems. For example
 			// if (setValues.BailOnError)
 			ret = ps_ERR;
+		}
+		else if (statement_type == isc_info_sql_stmt_insert ||
+        statement_type == isc_info_sql_stmt_update ||
+        statement_type == isc_info_sql_stmt_delete ||
+        statement_type == isc_info_sql_stmt_ddl ||
+        statement_type == isc_info_sql_stmt_set_generator)
+		{
+    	tables_actuality = 0;
 		}
 
 		// check for warnings
@@ -9165,6 +9072,18 @@ static processing_state process_statement(const std::string& str)
 	if (header2)
 		ISQL_FREE(header2);
 
+	if (ret == CONT)
+	{
+    const unsigned stmt_type = global_Stmt->getType(fbStatus);
+    if (stmt_type == isc_info_sql_stmt_ddl ||
+        stmt_type == isc_info_sql_stmt_insert ||
+        stmt_type == isc_info_sql_stmt_update ||
+        stmt_type == isc_info_sql_stmt_delete ||
+        stmt_type == isc_info_sql_stmt_set_generator)
+    {
+        tables_actuality = 0;
+    }
+}
 	return (ret);
 }
 
