@@ -29,7 +29,7 @@
   2001/05/20  Neil McCalden  add planonly option
   2001.09.09  Claudio Valderrama: put double quotes around identifiers
 	in dialect 3 only when needed. Solve mischievous declaration/invocation
-	of  that made no sense and caused pointer problems.
+	of IUTILS_copy_SQL_id that made no sense and caused pointer problems.
   2001/10/03  Neil McCalden  pick up Firebird version from database server
 	and display it with client version when -z used.
   2001.10.09 Claudio Valderrama: try to disconnect gracefully in batch mode.
@@ -182,7 +182,7 @@ static const Token parser_tokens[] =
 
 char** tokens = NULL;
 int tokens_size = 0;
-int tables_actuality = 0;
+bool are_tables_up_to_date = false;
 
 namespace IcuUtil
 {
@@ -508,7 +508,9 @@ static bool Input_file = false;
 
 static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
 static Firebird::GlobalPtr<string> TranParams;
+#ifdef HAVE_EDITLINE_H
 static void initialize_readline();
+#endif
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -806,7 +808,9 @@ int ISQL_main(int argc, char* argv[])
  **************************************/
 
 	os_utils::StopHandler stopHandler(&sigTstp);
+#if defined(HAVE_EDITLINE_H)
 	initialize_readline();
+#endif
 
 #if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
 	setlocale(LC_CTYPE, "");
@@ -1008,26 +1012,6 @@ void ISQL_prompt(const TEXT* string)
 	//#endif
 }
 
-const char* low_reg(const char* str)
-{
-/**************************************
- *
- *	l o w _ r e g
- *
- **************************************
- *
- * Functional description
- *	Returns a string in low case
- *
- **************************************/
-	char* tmp = strdup(str);
-    for (char* p = tmp; *p; ++p)
-	{
-		*p = std::tolower(static_cast<unsigned char>(*p));
-    }
-	return tmp;
-}
-
 void update_tokens()
 {
 /**************************************
@@ -1035,23 +1019,25 @@ void update_tokens()
  *	u p d a t e _ t o k e n s
  *
  **************************************
- *
  * Functional description
- *	Update tokens names in tokens array
+ *  Updates the list of tokens 
+ *  for auto-completion
+ *  using the list from ParserTokens.h,
+ *  inappropriate tokens are excluded.
  *
  **************************************/
 	const char *name;
 	int list_index = 0;
-	char sim[10] = "!()<>=,~|";
+	char unwantedSymbols[10] = "!()<>=,~|";
 	int exit = 0;
 	while ((name = parser_tokens[list_index].tok_string) != NULL)
 	{
     	list_index++;
 		int sim_index = 0;
-    	while(sim[sim_index] != '\0') 
+    	while(unwantedSymbols[sim_index] != '\0') 
 		{
 			exit = 0;
-			if (strchr(name, sim[sim_index]) != NULL)
+			if (strchr(name, unwantedSymbols[sim_index]) != NULL)
 			{
 				exit = 1;
 				break;
@@ -1085,6 +1071,11 @@ void update_tables(LegacyTables flag)
  *	Parameters:  flag -- type of tables
  *
  **************************************/
+
+ 	if (!DB)
+	{
+		return;
+	}
 	int tables_count = tokens_size;
 	int id = 0;
 	EXEC SQL SET TRANSACTION READ ONLY;
@@ -1148,13 +1139,9 @@ char* token_list_generator(const char *text, int state)
 	while ((name = tokens[list_index]) != NULL)
 	{
     	list_index++;
-    	if (strncmp (name, text, len) == 0)
+    	if (strncasecmp(name, text, len) == 0)
     	{
       		return strdup(name);
-    	}
-    	else if(strncmp (low_reg(name), text, len) == 0)
-    	{
-      		return strdup(low_reg(name));
     	}
   	}
 	return ((char *)NULL);
@@ -1172,15 +1159,16 @@ char** completion_list_generator(char *text, int start, int end)
  *	Compiles a list of complitions options
  *
  **************************************/
-	if (tables_actuality == 0)
+	if (!are_tables_up_to_date)
 	{
 		update_tables(SQL_objects);
-		tables_actuality = 1;
+		are_tables_up_to_date = true;
 	}
 	char** matches = completion_matches(text, (CPFunction*)&token_list_generator);
 	return (matches);
 }
 
+#if defined(HAVE_EDITLINE_H)
 static void initialize_readline()
 {
  /**************************************
@@ -1198,6 +1186,7 @@ static void initialize_readline()
 	rl_attempted_completion_function = (CPPFunction*)completion_list_generator;
 	update_tokens();
 }
+#endif
 
 static void readNextInputLine(const char* prompt)
 {
@@ -1230,9 +1219,6 @@ static void readNextInputLine(const char* prompt)
 		// CVC: On 2005-04-02, use an empty prompt when not working in
 		// interactive mode to behave like @@@ below at request by Pavel.
 		const char* new_prompt = Interactive ? prompt : "";
-
-		// Bind completer.
-		//initialize_readline();
 
 		for(;;)
 		{
@@ -8795,7 +8781,7 @@ static processing_state process_statement(const std::string& str)
 			}
 			else
 			{
-				tables_actuality = 0;
+				are_tables_up_to_date = false;
 			}
 
 			// check for warnings from COMMIT
@@ -8846,12 +8832,12 @@ static processing_state process_statement(const std::string& str)
 			ret = ps_ERR;
 		}
 		else if (statement_type == isc_info_sql_stmt_insert ||
-        statement_type == isc_info_sql_stmt_update ||
-        statement_type == isc_info_sql_stmt_delete ||
-        statement_type == isc_info_sql_stmt_ddl ||
-        statement_type == isc_info_sql_stmt_set_generator)
+        	statement_type == isc_info_sql_stmt_update ||
+        	statement_type == isc_info_sql_stmt_delete ||
+        	statement_type == isc_info_sql_stmt_ddl ||
+        	statement_type == isc_info_sql_stmt_set_generator)
 		{
-    	tables_actuality = 0;
+    		are_tables_up_to_date = false;
 		}
 
 		// check for warnings
@@ -9099,16 +9085,16 @@ static processing_state process_statement(const std::string& str)
 
 	if (ret == CONT)
 	{
-    const unsigned stmt_type = global_Stmt->getType(fbStatus);
-    if (stmt_type == isc_info_sql_stmt_ddl ||
-        stmt_type == isc_info_sql_stmt_insert ||
-        stmt_type == isc_info_sql_stmt_update ||
-        stmt_type == isc_info_sql_stmt_delete ||
-        stmt_type == isc_info_sql_stmt_set_generator)
-    {
-        tables_actuality = 0;
-    }
-}
+    	const unsigned stmt_type = global_Stmt->getType(fbStatus);
+    	if (stmt_type == isc_info_sql_stmt_ddl ||
+        	stmt_type == isc_info_sql_stmt_insert ||
+        	stmt_type == isc_info_sql_stmt_update ||
+        	stmt_type == isc_info_sql_stmt_delete ||
+        	stmt_type == isc_info_sql_stmt_set_generator)
+    	{
+        	are_tables_up_to_date = false;
+    	}
+	}
 	return (ret);
 }
 

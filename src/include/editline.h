@@ -43,7 +43,6 @@ extern char* rl_line_buffer;
 
 extern char *readline(const char*);
 extern void add_history(char*);
-extern void add_history(char*);
 extern char ** completion_matches (char *text, CPFunction *entry_func);
 
 #ifdef __cplusplus
