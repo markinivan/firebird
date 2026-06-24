@@ -6,11 +6,11 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/gen/Debug/firebird/bin/isql",
-			"args": [],
+			"args": ["-u", "sysdba", "employee"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceRoot}",
 			"environment": [],
-			"externalConsole": true,
+			"externalConsole": false,
 			"linux": {
 				"MIMode": "gdb"
 			},

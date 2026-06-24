@@ -1072,13 +1072,9 @@ void update_tables(LegacyTables flag)
  *
  **************************************/
 
- 	if (!DB)
-	{
+ 	if (!DB || !frontendTransaction())
 		return;
-	}
 	int tables_count = tokens_size;
-	int id = 0;
-	EXEC SQL SET TRANSACTION READ ONLY;
 	FOR REL IN RDB$RELATIONS
 		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
 			REL.RDB$VIEW_BLR MISSING
@@ -1108,11 +1104,9 @@ void update_tables(LegacyTables flag)
 	ON_ERROR
 	{
 		ISQL_errmsg(fbStatus);
-		ROLLBACK;
 		return;
 	}
 	END_ERROR;
-	EXEC SQL COMMIT;
 }
 
 char* token_list_generator(const char *text, int state)

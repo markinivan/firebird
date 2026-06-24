@@ -17,7 +17,7 @@
 		"*.epp": "cpp"
 	},
 	"search.exclude": {
-		"temp/**": true,
+		"temp/**": false,
 		"gen/**": true
 	}
 }
