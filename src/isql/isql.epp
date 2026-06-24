@@ -810,6 +810,9 @@ int ISQL_main(int argc, char* argv[])
 	os_utils::StopHandler stopHandler(&sigTstp);
 #if defined(HAVE_EDITLINE_H)
 	initialize_readline();
+	#if defined(HAVE_LOCALE_H)
+		setlocale(LC_CTYPE, "");
+	#endif
 #endif
 
 #if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
