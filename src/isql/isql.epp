@@ -70,6 +70,7 @@
 #include "../common/StatusHolder.h"
 #include "../common/Tokens.h"
 #include "../common/TimeZoneUtil.h"
+#include "../common/Token.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -141,7 +142,6 @@ using MsgFormat::SafeArg;
 #include "../intl/charsets.h"
 #include <unicode/utf8.h>
 
-
 //DATABASE DB = COMPILETIME "yachts.lnk";
 DATABASE DB = COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
@@ -170,6 +170,19 @@ constexpr const char* ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, U
 constexpr int ISQL_COUNTERS = 8;
 
 constexpr const char* UNKNOWN = "*unknown*";
+
+#define PARSER_TOKEN(ident, str, nonReserved) \
+  {MAX_USHORT, str, nonReserved},
+
+static const Token parser_tokens[] =
+{
+#include "../common/ParserTokens.h"
+	{0, NULL, false}
+};
+
+char** tokens = NULL;
+int tokens_size = 0;
+bool are_tables_up_to_date = false;
 
 namespace IcuUtil
 {
@@ -495,6 +508,9 @@ static bool Input_file = false;
 
 static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
 static Firebird::GlobalPtr<string> TranParams;
+#ifdef HAVE_EDITLINE_H
+static void initialize_readline();
+#endif
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -792,10 +808,13 @@ int ISQL_main(int argc, char* argv[])
  **************************************/
 
 	os_utils::StopHandler stopHandler(&sigTstp);
-
-#if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
+#ifdef HAVE_EDITLINE_H
+	initialize_readline();
+#ifdef HAVE_LOCALE_H
 	setlocale(LC_CTYPE, "");
 #endif
+#endif
+
 	atexit(&atexit_fb_shutdown);
 
 	QualifiedMetaString tabname;
@@ -972,8 +991,6 @@ static const char* const userPrompt = userPrompt2;
 static char* lastInputLine = NULL;
 static int getColumn = -1;
 
-
-
 void ISQL_prompt(const TEXT* string)
 {
 /**************************************
@@ -993,8 +1010,178 @@ void ISQL_prompt(const TEXT* string)
 	//	fprintf(stdout, userPrompt.c_str());
 	//	fflush(stdout);
 	//#endif
-
 }
+
+#ifdef HAVE_EDITLINE_H
+
+void update_tokens()
+{
+/**************************************
+ *
+ *	u p d a t e _ t o k e n s
+ *
+ **************************************
+ * Functional description
+ *  Updates the list of tokens 
+ *  for auto-completion
+ *  using the list from ParserTokens.h,
+ *  inappropriate tokens are excluded.
+ *
+ **************************************/
+	const char *name;
+	int list_index = 0;
+	char unwantedSymbols[10] = "!()<>=,~|";
+	int exit = 0;
+	while ((name = parser_tokens[list_index].tok_string) != NULL)
+	{
+    	list_index++;
+		int sim_index = 0;
+    	while(unwantedSymbols[sim_index] != '\0') 
+		{
+			exit = 0;
+			if (strchr(name, unwantedSymbols[sim_index]) != NULL)
+			{
+				exit = 1;
+				break;
+			}
+			sim_index++;
+		}
+		if (exit)
+		{
+			continue;
+		}
+    	tokens = (char**)realloc(tokens, (tokens_size+2) * sizeof(char*));
+		tokens[tokens_size] = strdup(name);
+		tokens_size++;
+	}
+	if (tokens_size == 0)
+		tokens = (char**)malloc((tokens_size+2) * sizeof(char*));
+	tokens[tokens_size] = NULL;
+}
+
+void update_tables(LegacyTables flag)
+{
+/**************************************
+ *
+ *	u p d a t e _ t a b l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update tables names in tokens array
+ *
+ *	Parameters:  flag -- type of tables
+ *
+ **************************************/
+
+ 	if (!DB || !frontendTransaction())
+		return;
+	int tables_count = tokens_size;
+	FOR REL IN RDB$RELATIONS
+		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+			REL.RDB$VIEW_BLR MISSING
+		SORTED BY REL.RDB$SCHEMA_NAME, REL.RDB$RELATION_NAME
+	{
+		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) &&
+		    (flag != ALL_objects))
+			continue;
+
+		const QualifiedMetaString relationName(REL.RDB$RELATION_NAME,
+		                                       REL.RDB$SCHEMA_NAME);
+
+		if (flag || !strncmp(REL.RDB$SECURITY_CLASS, "SQL$", 4))
+		{
+			Firebird::string name = IUTILS_name_to_string(relationName);
+			const char* table_name = name.c_str();
+			const char* dot = strchr(table_name, '.');
+            if (dot)
+                table_name = dot + 1;
+			tokens = (char**)realloc(tokens, (tables_count+2)* sizeof(char*));
+			tokens[tables_count] = strdup(table_name);
+			tables_count++;
+		}
+	}
+	tokens[tables_count] = NULL;
+	END_FOR
+	ON_ERROR
+	{
+		ISQL_errmsg(fbStatus);
+		return;
+	}
+	END_ERROR;
+}
+
+char* token_list_generator(const char *text, int state)
+{
+ /**************************************
+ *
+ *	t o k e n _ l i s t _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Generate autocomplete variants
+ *
+ *	Parameters:  text -- 0, fragment of compliteable word
+ *
+ **************************************/
+	static int list_index, len;
+	const char *name;
+	if (!state)
+	{
+    	list_index = 0;
+    	len = strlen(text);
+	}
+	while ((name = tokens[list_index]) != NULL)
+	{
+    	list_index++;
+    	if (strncasecmp(name, text, len) == 0)
+    	{
+      		return strdup(name);
+    	}
+  	}
+	return ((char *)NULL);
+}
+
+char** completion_list_generator(char *text, int start, int end)
+{
+ /**************************************
+ *
+ *	c o m p l e t i o n _ l i s t _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compiles a list of complitions options
+ *
+ **************************************/
+	if (!are_tables_up_to_date)
+	{
+		update_tables(SQL_objects);
+		are_tables_up_to_date = true;
+	}
+	char** matches = completion_matches(text, (CPFunction*)&token_list_generator);
+	return (matches);
+}
+
+static void initialize_readline()
+{
+ /**************************************
+ *
+ *	i n i t i a l i z e _ r e a d l i n e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize autocomplition parameters
+ *
+ **************************************/
+	rl_readline_name = strdup("ISQL");
+	rl_completion_entry_function = (CPFunction*)token_list_generator;
+	rl_attempted_completion_function = (CPPFunction*)completion_list_generator;
+	update_tokens();
+}
+#endif
 
 static void readNextInputLine(const char* prompt)
 {
@@ -1027,6 +1214,7 @@ static void readNextInputLine(const char* prompt)
 		// CVC: On 2005-04-02, use an empty prompt when not working in
 		// interactive mode to behave like @@@ below at request by Pavel.
 		const char* new_prompt = Interactive ? prompt : "";
+
 		for(;;)
 		{
 			lastInputLine = readline(new_prompt);
@@ -8583,7 +8771,13 @@ static processing_state process_statement(const std::string& str)
 			// only at commit time, so we need to check here.
 			// AP: fbStatus will be cleaned in commit_trans()
 			if (!commit_trans(&D__trans))
+			{
 				ret = ps_ERR;
+			}
+			else
+			{
+				are_tables_up_to_date = false;
+			}
 
 			// check for warnings from COMMIT
 			ISQL_warning(fbStatus);
@@ -8631,6 +8825,14 @@ static processing_state process_statement(const std::string& str)
 			// CVC: Make this conditional if it causes problems. For example
 			// if (setValues.BailOnError)
 			ret = ps_ERR;
+		}
+		else if (statement_type == isc_info_sql_stmt_insert ||
+        	statement_type == isc_info_sql_stmt_update ||
+        	statement_type == isc_info_sql_stmt_delete ||
+        	statement_type == isc_info_sql_stmt_ddl ||
+        	statement_type == isc_info_sql_stmt_set_generator)
+		{
+    		are_tables_up_to_date = false;
 		}
 
 		// check for warnings
@@ -8876,6 +9078,18 @@ static processing_state process_statement(const std::string& str)
 	if (header2)
 		ISQL_FREE(header2);
 
+	if (ret == CONT)
+	{
+    	const unsigned stmt_type = global_Stmt->getType(fbStatus);
+    	if (stmt_type == isc_info_sql_stmt_ddl ||
+        	stmt_type == isc_info_sql_stmt_insert ||
+        	stmt_type == isc_info_sql_stmt_update ||
+        	stmt_type == isc_info_sql_stmt_delete ||
+        	stmt_type == isc_info_sql_stmt_set_generator)
+    	{
+        	are_tables_up_to_date = false;
+    	}
+	}
 	return (ret);
 }
 
